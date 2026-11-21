@@ -1,4 +1,4 @@
-# 做饭闯关 · H5 原型（v0.2.1）
+# 做饭闯关 · H5 原型（v0.2.2）
 
 横屏手机网页游戏，纯 HTML5 Canvas + 原生 ES 模块，无构建步骤。规则：`docs/rules.md` v0.2.2；关卡格式：`levels/FORMAT.md`（formatVersion 2）；布局：`ui/layout.md` v0.2「最终坐标」（915×412），元素 id = `ui/ui-spec.md` 稳定 id。
 
@@ -48,3 +48,16 @@ cd src && python3 -m http.server 8765 --bind 127.0.0.1   # 打开 http://127.0.0
 ## 本地存储
 
 `cg.tutorialDone`、`cg.sound`、`cg.progress`（`{unlocked, best{关卡id:{score,stars}}}`）。
+
+## 发布到公网（GitHub Pages）
+
+```bash
+bash src/tools/deploy.sh            # 同步关卡 → 构建 /workspace/deploy → commit（信息带版本号）→ push main → 等公网 VERSION 生效（最多约 5 分钟）
+bash src/tools/deploy.sh --no-push  # 只构建部署副本，不提交
+```
+
+- 公网：https://wsxftgb1235789-design.github.io/cooking-game/（仓库 `wsxftgb1235789-design/cooking-game`，main 根目录；部署副本排除 `tools/`，保留 `.git`、`.nojekyll`）。
+- 缓存：版本号只在 `js/config.js` 的 `VERSION` 改。
+  - 运行时加载（levels.json、图片、音频、version.json）在源码里通过 `withV()` 带 `?v=<VERSION>`；
+  - `index.html` 的 css / 入口 js / manifest 和所有 ES module 的相对 `import` 由 deploy.sh 在**部署副本**里加 `?v=<VERSION>`（源码不变，本地直接跑 src 不受影响），加完后校验没有漏掉的引用，漏一个就中止发布。
+  - 版本自检：启动和切回前台时取 `version.json`（no-store），和已加载的 VERSION 不一致就在顶部提示「有新版本，点这里刷新」。

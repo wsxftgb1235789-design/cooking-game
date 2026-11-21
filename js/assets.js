@@ -1,5 +1,5 @@
 // 图片预加载：带进度回调；单张失败只记录，绘制时自动回退占位，不会中断
-import { IMAGES } from './config.js';
+import { IMAGES, withV } from './config.js?v=v0.2.2';
 
 const images = {};
 export const missing = [];
@@ -18,6 +18,6 @@ export function loadImages(onProgress, base = 'assets/img/') {
     };
     im.onload = () => finish(true);
     im.onerror = () => finish(false);
-    im.src = `${base}${name}.png`;
+    im.src = withV(`${base}${name}.png`);
   })));
 }

@@ -1,17 +1,17 @@
 // 关卡场景（通用）：订单、计时、得分/失误、教学、提示、暂停、结算。做菜交给可替换的烹饪模块（cooking/README.md）
-import { DESIGN_W, DESIGN_H, STORE, COOKING_MODULE } from '../config.js';
-import { L, canonicalId } from '../layout.js';
-import { createCooking } from '../cooking/index.js';
-import { DISH_ART } from '../cooking/wok/defaults.js';
-import { OrderSystem } from '../systems/orders.js';
-import { Scoreboard, starsFor } from '../systems/scoring.js';
-import { LevelTimer } from '../systems/timer.js';
-import { Tutorial, Hints } from '../systems/tutorial.js';
-import { ButtonGroup } from '../ui.js';
-import { drawImg, fillRR, roundRect, text } from '../render/draw.js';
-import { img } from '../assets.js';
-import { audio } from '../audio.js';
-import { load, save, progress } from '../storage.js';
+import { DESIGN_W, DESIGN_H, STORE, COOKING_MODULE } from '../config.js?v=v0.2.2';
+import { L, canonicalId } from '../layout.js?v=v0.2.2';
+import { createCooking } from '../cooking/index.js?v=v0.2.2';
+import { DISH_ART } from '../cooking/wok/defaults.js?v=v0.2.2';
+import { OrderSystem } from '../systems/orders.js?v=v0.2.2';
+import { Scoreboard, starsFor } from '../systems/scoring.js?v=v0.2.2';
+import { LevelTimer } from '../systems/timer.js?v=v0.2.2';
+import { Tutorial, Hints } from '../systems/tutorial.js?v=v0.2.2';
+import { ButtonGroup } from '../ui.js?v=v0.2.2';
+import { drawImg, fillRR, roundRect, text } from '../render/draw.js?v=v0.2.2';
+import { img } from '../assets.js?v=v0.2.2';
+import { audio } from '../audio.js?v=v0.2.2';
+import { load, save, progress } from '../storage.js?v=v0.2.2';
 
 const inR = (r, x, y, pad = 0) => !!r && x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y - pad && y <= r.y + r.h + pad;
 const center = (r) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
@@ -46,6 +46,7 @@ export class LevelScene {
       orderRect: (o) => self.cardRect(o),
       serve: (dish, order) => self.serve(dish, order),
       float: (s, x, y, c) => self.float(s, x, y, c),
+      inTutorial: () => self.tutorial.active,
       seasoningTarget: (o) => self.seasoningTarget(o),
       recipes: app.data.recipes, seasoning: app.data.seasoning, tuning: app.data.tuning, debug: DEBUG
     };
@@ -139,9 +140,9 @@ export class LevelScene {
     audio.play(cleared ? 'result_win' : 'result_fail');
     const g = new ButtonGroup(), cx = DESIGN_W / 2, nextOk = hasNext && progress.get().unlocked > this.level.index + 1;
     const btn = (o) => g.add({ h: 52, size: 19, color: '#455a64', drawIcon: buttonArt, noFrame: true, ...o });
-    btn({ id: 'retry', label: '重玩', x: cx - 214, y: 288, w: 132, onTap: () => this.app.startLevel(this.level.index) });
-    btn({ id: 'select', label: '选关', x: cx - 66, y: 288, w: 132, onTap: () => this.app.goSelect() });
-    btn({ id: 'next', label: hasNext ? '下一关' : '最后一关', x: cx + 82, y: 288, w: 132, enabled: nextOk, onTap: () => this.app.startLevel(this.level.index + 1) });
+    btn({ id: 'retry', label: '重玩', x: cx - 214, y: 290, w: 132, onTap: () => this.app.startLevel(this.level.index) });
+    btn({ id: 'select', label: '选关', x: cx - 66, y: 290, w: 132, onTap: () => this.app.goSelect() });
+    btn({ id: 'next', label: hasNext ? '下一关' : '最后一关', x: cx + 82, y: 290, w: 132, enabled: nextOk, onTap: () => this.app.startLevel(this.level.index + 1) });
     this.overlayUI = g;
   }
 
@@ -185,6 +186,7 @@ export class LevelScene {
     if (this.paused) return;
     this.tutorial.update(dt);
     this.cooking.setTempCap(this.tutorial.capOn ? (this.level.tutorial.tempCap ?? 75) : Infinity);
+    { const p0 = this.cooking.pots?.[0]; if (this.tutorial.active && p0) this.tutorial.updateHeat(dt, p0.T, p0.recipe?.temp); } // BUG-001：等温度阶段火太小的提示
     this.cooking.setCookFrozen?.(this.tutorial.readingPause); // 教学阅读期暂停 C、B（正式订单不受影响）
     const frozen = this.tutorial.active; // 强引导期间订单与关卡计时冻结（教学单本来就不计时）
     if (!frozen) { this.orders.update(dt); this.timer.update(dt); }
@@ -279,6 +281,7 @@ export class LevelScene {
     }
     else if (w.event === 'serve') path = [R('plate:1'), R('orderCard')];
     else if (w.event === 'toss' || w.after === 'toss') circle = R('pot:1');
+    else if (w.event === 'heatHint') { const h = R('potHandle:1'); if (h) path = [{ ...h, y: h.y + 40 }, h]; } // 往上拖
     else if (w.event === 'tempBand' && !w.after) { const h = R('potHandle:1'); if (h) path = [h, { ...h, y: h.y + 50 }]; }
     let fx, fy;
     if (path && path.every(Boolean)) {
@@ -312,19 +315,21 @@ export class LevelScene {
     const r = this.result, cx = DESIGN_W / 2;
     ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 0, DESIGN_W, DESIGN_H);
     this.drawPanel(ctx, cx - 240, 40, 480, 320);
+    // BUG-007：底图自带的两个按钮槽和程序画的三个按钮对不齐 → 用面板底色盖掉按钮槽（底图 960×640 缩到 480×320，槽在 y 242–302）
+    if (img('ui_results_panel')) { ctx.fillStyle = 'rgb(246,230,200)'; ctx.fillRect(cx - 200, 276, 400, 72); }
     text(ctx, r.cleared ? '通关！' : '挑战失败', cx, 76, { size: 26, bold: true, color: '#fff8ec', stroke: r.cleared ? '#2e7d32' : '#c62828' });
     for (let i = 0; i < 3; i++) drawImg(ctx, i < r.stars && r.t > 0.25 * (i + 1) ? 'ui_star_bright' : 'ui_star_dim', cx - 30 + (i - 1) * 74, 110, 60, 60, { color: i < r.stars ? '#ffc107' : '#bbb' });
     text(ctx, `得分 ${r.score}`, cx - 150, 236, { size: 16, bold: true, color: '#3e2723' });
     text(ctx, `完美 ${r.perfect}`, cx, 236, { size: 16, bold: true, color: '#3e2723' });
     text(ctx, `失误 ${r.mistakes}`, cx + 150, 236, { size: 16, bold: true, color: '#3e2723' });
-    text(ctx, `${this.level.name}${r.reason ? ' · ' + r.reason : ''} · 二星 ${this.level.stars.two} / 三星 ${this.level.stars.three}${r.unlockedNext ? ' · 已解锁下一关' : ''}`, cx, 270, { size: 11, color: '#5d4037', maxW: 420 });
+    text(ctx, `${this.level.name}${r.reason ? ' · ' + r.reason : ''} · 二星 ${this.level.stars.two} / 三星 ${this.level.stars.three}${r.unlockedNext ? ' · 已解锁下一关' : ''}`, cx, 278, { size: 11, color: '#5d4037', maxW: 420 }); // 说明行放在统计框（下沿 y≈269）和按钮之间
     this.overlayUI.draw(ctx);
   }
 
   snapshot() {
     return {
       scene: 'level', level: this.level.id, levelIndex: this.level.index, paused: this.paused, pauseReason: this.pauseReason,
-      time: +this.orders.time.toFixed(3), tutorialActive: this.tutorial.active, reading: this.tutorial.readingPause, tutorialText: this.tutorial.view?.text || null, tutorialStep: this.tutorial.view?.id || null, tutorialWaiting: !!this.tutorial.view?.waiting, skippedTutorial: this.skippedTutorial,
+      time: +this.orders.time.toFixed(3), tutorialActive: this.tutorial.active, reading: this.tutorial.readingPause, tutorialText: this.tutorial.view?.text || null, tutorialStep: this.tutorial.view?.id || null, tutorialWaiting: !!this.tutorial.view?.waiting, heatHint: this.tutorial.heatHint, skippedTutorial: this.skippedTutorial,
       orders: this.orders.active.map((o) => ({ index: o.index, recipe: o.recipe, request: o.request, left: +o.left.toFixed(3), tutorial: o.tutorial })),
       queue: this.orders.queue.length, resolved: this.orders.resolved, total: this.orders.total,
       cooking: this.cooking.snapshot(), events: this.log.slice(-20),

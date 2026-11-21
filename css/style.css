@@ -44,3 +44,8 @@ html, body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px);
 }
+
+/* 版本自检：发现新版本时的刷新提示 */
+#update-banner { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 20;
+  padding: 8px 16px; border: 0; border-radius: 18px; background: #ffb300; color: #2b2520;
+  font: bold 14px/1.2 system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.4); cursor: pointer; }

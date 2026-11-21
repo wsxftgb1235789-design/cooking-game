@@ -1,12 +1,15 @@
 // 全局常量。版本号只在这里改。
-export const VERSION = 'v0.2.1';
+export const VERSION = 'v0.2.2';
 export const COOKING_MODULE = 'wok';
 
 // 逻辑设计分辨率（20:9）。布局全部用这个坐标系，渲染时等比缩放到安全区内。
 export const DESIGN_W = 915; // = ui/ui-spec.md 基准视口
 export const DESIGN_H = 412;
 
-export const LEVELS_URL = 'levels/levels.json';
+// 缓存版本：所有运行时加载的资源 URL 都带 ?v=<VERSION>（换版本 → 新 URL → 绕过浏览器/CDN 旧缓存）
+export const ASSET_QUERY = `v=${encodeURIComponent(VERSION)}`;
+export function withV(url) { return url + (url.includes('?') ? '&' : '?') + ASSET_QUERY; }
+export const LEVELS_URL = withV('levels/levels.json');
 export const MAX_FRAME_DT = 0.05; // 单帧 dt 上限（秒），防止卡顿/切回前台时跳变
 
 // localStorage 键

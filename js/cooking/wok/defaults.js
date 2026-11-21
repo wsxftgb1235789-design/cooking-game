@@ -8,7 +8,7 @@ export const DEFAULT_SEASONING = {
 };
 // 全局手感参数（根节点 tuning，可选）
 export const DEFAULT_TUNING = {
-  gesture: { lockPx: 12, plateDragPx: 80, circleDeg: 360, circleMinRadius: 20, circleMaxRadius: 85, handleOffBelow: 0.1, tapOnH: 0.5, minH: 0.2 },
+  gesture: { lockPx: 12, plateDragPx: 80, circleDeg: 360, circleMinRadius: 20, circleMaxRadius: 85, handleOffBelow: 0.1, trashTapSlop: 12, grabPad: 8, trashDropPad: 10, tapOnH: 0.5, minH: 0.2 },
   trashWindow: 2,
   maxFrameDt: 0.05
 };

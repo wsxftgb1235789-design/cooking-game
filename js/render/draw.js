@@ -1,5 +1,5 @@
 // 绘制工具：图片（缺图自动回退占位色块）、圆角矩形、文字、熟度条
-import { img } from '../assets.js';
+import { img } from '../assets.js?v=v0.2.2';
 
 export function roundRect(ctx, x, y, w, h, r) {
   r = Math.min(r, w / 2, h / 2);

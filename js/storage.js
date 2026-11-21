@@ -1,5 +1,5 @@
 // localStorage 安全封装（隐私模式/禁用存储时不抛错）
-import { STORE } from './config.js';
+import { STORE } from './config.js?v=v0.2.2';
 const mem = {};
 export function load(key, def) {
   try { const v = localStorage.getItem(key); return v == null ? def : JSON.parse(v); } catch (_) { return key in mem ? mem[key] : def; }

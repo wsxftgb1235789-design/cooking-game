@@ -1,7 +1,7 @@
 // 音效：WebAudio。首次触摸时解锁 AudioContext；有文件用文件，没有则合成占位。
 // 接口：audio.play(name) / audio.setLoop(name, on) / audio.setEnabled(bool)。
-import { SOUNDS, STORE } from './config.js';
-import { load, save } from './storage.js';
+import { SOUNDS, STORE, withV } from './config.js?v=v0.2.2';
+import { load, save } from './storage.js?v=v0.2.2';
 
 class AudioManager {
   constructor() {
@@ -36,8 +36,8 @@ class AudioManager {
     await Promise.all(names.map(async ([key, file]) => {
       try {
         if (!this.ctx) throw new Error('no WebAudio');
-        let res = await fetch(`${base}${file}.${ext}`);
-        if (!res.ok && ext === 'ogg') res = await fetch(`${base}${file}.mp3`);
+        let res = await fetch(withV(`${base}${file}.${ext}`));
+        if (!res.ok && ext === 'ogg') res = await fetch(withV(`${base}${file}.mp3`));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const ab = await res.arrayBuffer();
         this.buffers[key] = await new Promise((ok, bad) => this.ctx.decodeAudioData(ab, ok, bad));

@@ -1,4 +1,4 @@
-import { canonicalId } from '../layout.js';
+import { canonicalId } from '../layout.js?v=v0.2.2';
 // 新手教学（强引导，一步一卡）+ 轻提示。数据来自 levels.json 的 tutorial.steps / hints（FORMAT.md §3.6）
 // waitFor / showAt / trigger 匹配。字段见 FORMAT.md §5：gte(数值≥) value(tempGte 阈值) count(次数≥) band stepType source orderIndex recipe after(本步开始后先发生过的事件)
 export function matches(w, name, data = {}, seen = null) {
@@ -19,8 +19,14 @@ export function matches(w, name, data = {}, seen = null) {
 // 玩家的有效操作（结束阅读期）
 const ACTIONS = new Set(['tapAnywhere', 'fireOn', 'heat', 'step', 'ingredientIn', 'seasoningCount', 'toss', 'plate', 'trash', 'serve', 'returned', 'rejected', 'wrongDish']);
 
+// BUG-001：教学里“等温度”的阶段（showAt / waitFor 是 tempBand / tempGte / doneness）都允许拖锅柄调火（potHeat:N，只调火、不能装盘）；
+// 3 秒内 T 没升、又没达到这一阶段需要的温度 → 弹「往上拖锅柄，把火开大」并高亮锅柄，T 一升就收起
+const TEMP_EVENTS = new Set(['tempBand', 'tempGte', 'doneness']);
+export const HEAT_HINT = '往上拖锅柄，把火开大';
+const HEAT_HINT_AFTER = 3;
+
 export class Tutorial {
-  constructor(steps) { this.reading = false; this.seen = new Set(); this.steps = steps || []; this.active = false; this.idx = 0; this.branch = null; this.shown = true; this.finished = false; this.t = 0; }
+  constructor(steps) { this.reading = false; this.seen = new Set(); this.steps = steps || []; this.active = false; this.idx = 0; this.branch = null; this.shown = true; this.finished = false; this.t = 0; this.heatHint = false; this.heatStill = 0; this.lastT = null; }
   start() { if (!this.steps.length) return; this.active = true; this.idx = 0; this.enter(); }
   enter() { const s = this.steps[this.idx]; this.shown = !s.showAt; this.t = 0; this.seen = new Set(); this.reading = this.shown; }
   // 教学 T 上限：v0.2.1 起 tempCap 在整个教学期间都生效（教学全程 T ≤ tempCap）。
@@ -28,9 +34,33 @@ export class Tutorial {
   get capOn() { return this.active; }
   // 阅读期：一张新提示卡出现（步骤显示 / showAt 触发 / 糊锅分支）到玩家第一次有效操作之前。
   // 有效操作 = 被烹饪模块接受并发出的动作事件，或“点任意处继续”。阅读期内锅里的 C、B 暂停（T 不停）
-  get readingPause() { return this.active && this.reading && !!this.view && !this.view.waiting; }
+  get readingPause() { const v = this.baseView; return this.active && this.reading && !!v && !v.waiting; }
+  // 当前是否处于“等温度”阶段（含 showAt 未触发的等待画面）；返回这一阶段需要达到的温度（低于它且 T 不升 → 提示开大火）
+  heatNeed(temp) {
+    if (!this.active || this.branch) return null;
+    const cur = this.steps[this.idx]; if (!cur) return null;
+    const cond = !this.shown && cur.showAt ? cur.showAt : cur.waitFor;
+    if (!cond || !TEMP_EVENTS.has(cond.event)) return null;
+    if (cond.event === 'tempGte') return cond.value;
+    if (cond.event === 'tempBand') return cond.band === 'red' ? temp.redAbove : cond.band === 'yellow' ? temp.blueBelow : -Infinity;
+    return temp.blueBelow; // doneness：黄段才正常熟
+  }
+  get heatPhase() { return this.heatNeed({ blueBelow: 0, redAbove: 0 }) != null; }
+  updateHeat(dt, T, temp) {
+    const need = temp ? this.heatNeed(temp) : null;
+    if (need == null) { this.heatHint = false; this.heatStill = 0; this.lastT = T; return; }
+    const rising = this.lastT != null && T > this.lastT + 1e-6; this.lastT = T;
+    if (rising || T >= need) { this.heatStill = 0; this.heatHint = false; return; }
+    this.heatStill += dt;
+    if (this.heatStill >= HEAT_HINT_AFTER) this.heatHint = true;
+  }
   // 当前展示的步骤（showAt 未触发时继续展示上一步画面）
   get view() {
+    const v = this.baseView;
+    if (!v || !this.heatHint) return v;
+    return { ...v, text: HEAT_HINT, highlight: ['potHandle:1'], waiting: false, waitFor: { event: 'heatHint' }, heatHint: true };
+  }
+  get baseView() {
     if (!this.active) return null;
     if (this.branch) return this.branch;
     if (!this.shown && this.idx > 0) return { ...this.steps[this.idx - 1], waiting: true };
@@ -62,7 +92,8 @@ export class Tutorial {
   // 强引导期间只允许涉及高亮目标的操作
   allows(ids) {
     if (!this.active) return true;
-    const v = this.view;
+    if (this.heatPhase && ids.some((id) => /^potHeat:/.test(id))) return true; // BUG-001：等温度阶段随时可调火
+    const v = this.baseView;
     if (!v || v.waiting) return false;
     if (v.waitFor?.event === 'tapAnywhere') return false;
     const hl = new Set((v.highlight || []).map(canonicalId));

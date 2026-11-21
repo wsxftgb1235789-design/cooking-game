@@ -1,10 +1,10 @@
 // 加载、错误、选关界面
-import { DESIGN_W, DESIGN_H, VERSION } from '../config.js';
-import { ButtonGroup, ICONS } from '../ui.js';
-import { fillRR, roundRect, text, drawImg } from '../render/draw.js';
-import { img } from '../assets.js';
-import { audio } from '../audio.js';
-import { progress } from '../storage.js';
+import { DESIGN_W, DESIGN_H, VERSION } from '../config.js?v=v0.2.2';
+import { ButtonGroup, ICONS } from '../ui.js?v=v0.2.2';
+import { fillRR, roundRect, text, drawImg } from '../render/draw.js?v=v0.2.2';
+import { img } from '../assets.js?v=v0.2.2';
+import { audio } from '../audio.js?v=v0.2.2';
+import { progress } from '../storage.js?v=v0.2.2';
 
 function bg(ctx) {
   const tile = img('counter_tile');

@@ -1,13 +1,13 @@
 // 入口：预加载 → 读关卡配置 → 选关；主循环用累计 dt（单帧上限），切后台/竖屏自动暂停
-import { VERSION, LEVELS_URL, MAX_FRAME_DT, IMAGES } from './config.js';
-import { Viewport } from './viewport.js';
-import { Input } from './input.js';
-import { setupFullscreenButton } from './fullscreen.js';
-import { loadImages, missing } from './assets.js';
-import { audio } from './audio.js';
-import { loadLevels } from './levels.js';
-import { LoadingScene, ErrorScene, SelectScene } from './scenes/menus.js';
-import { LevelScene } from './scenes/level.js';
+import { VERSION, LEVELS_URL, MAX_FRAME_DT, IMAGES, withV } from './config.js?v=v0.2.2';
+import { Viewport } from './viewport.js?v=v0.2.2';
+import { Input } from './input.js?v=v0.2.2';
+import { setupFullscreenButton } from './fullscreen.js?v=v0.2.2';
+import { loadImages, missing } from './assets.js?v=v0.2.2';
+import { audio } from './audio.js?v=v0.2.2';
+import { loadLevels } from './levels.js?v=v0.2.2';
+import { LoadingScene, ErrorScene, SelectScene } from './scenes/menus.js?v=v0.2.2';
+import { LevelScene } from './scenes/level.js?v=v0.2.2';
 
 const params = new URLSearchParams(location.search);
 const DEBUG_SPEED = Math.max(0.1, Math.min(20, parseFloat(params.get('debugSpeed')) || 1)); // 仅测试用
@@ -27,7 +27,7 @@ class App {
     this.input.on('up', (e) => this.scene.pointerUp?.(e));
     // 切后台 / 锁屏 / 页面隐藏：自动暂停（回来后停在暂停界面）
     const hide = () => { this.scene.pause?.('hidden'); audio.suspend(); };
-    document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); else { audio.resume(); this.last = performance.now(); } });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); else { audio.resume(); this.last = performance.now(); if (this.data) this.checkVersion(); } });
     window.addEventListener('pagehide', hide);
     window.addEventListener('blur', () => { /* 桌面失焦不暂停，只处理 visibility */ });
     this.last = performance.now();
@@ -59,6 +59,23 @@ class App {
     const lv = parseInt(params.get('level'), 10); // 调试：?level=N 直接进第 N 关
     if (lv >= 1 && lv <= this.data.levels.length) this.startLevel(lv - 1); else this.goSelect();
     console.info(`[cooking-game] ${VERSION} 就绪：${this.data.levels.length} 关`);
+    this.checkVersion();
+  }
+
+  // 版本自检：取 version.json（no-store + 时间戳），和已加载的 VERSION 不一致 → 提示刷新。失败静默忽略
+  async checkVersion() {
+    try {
+      const res = await fetch(withV(`version.json?t=${Date.now()}`), { cache: 'no-store' });
+      if (!res.ok) return;
+      const remote = (await res.json()).version;
+      this.remoteVersion = remote;
+      if (!remote || remote === VERSION || document.getElementById('update-banner')) return;
+      const b = document.createElement('button');
+      b.id = 'update-banner'; b.type = 'button';
+      b.textContent = `有新版本 ${remote}（当前 ${VERSION}），点这里刷新`;
+      b.addEventListener('click', () => { const u = new URL(location.href); u.searchParams.set('v', remote); location.replace(u.toString()); });
+      document.getElementById('app').appendChild(b);
+    } catch (_) { /* 离线等：忽略 */ }
   }
 
   frame(now) {

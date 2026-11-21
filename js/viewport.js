@@ -1,5 +1,5 @@
 // 视口：处理 devicePixelRatio、safe-area、20:9 等比缩放、横竖屏判定
-import { DESIGN_W, DESIGN_H } from './config.js';
+import { DESIGN_W, DESIGN_H } from './config.js?v=v0.2.2';
 
 const probe = () => document.getElementById('safe-probe');
 
