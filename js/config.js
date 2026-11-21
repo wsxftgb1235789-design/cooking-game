@@ -1,5 +1,5 @@
 // 全局常量。版本号只在这里改。
-export const VERSION = 'v0.2.2';
+export const VERSION = 'v0.2.3';
 export const COOKING_MODULE = 'wok';
 
 // 逻辑设计分辨率（20:9）。布局全部用这个坐标系，渲染时等比缩放到安全区内。

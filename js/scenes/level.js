@@ -1,17 +1,17 @@
 // 关卡场景（通用）：订单、计时、得分/失误、教学、提示、暂停、结算。做菜交给可替换的烹饪模块（cooking/README.md）
-import { DESIGN_W, DESIGN_H, STORE, COOKING_MODULE } from '../config.js?v=v0.2.2';
-import { L, canonicalId } from '../layout.js?v=v0.2.2';
-import { createCooking } from '../cooking/index.js?v=v0.2.2';
-import { DISH_ART } from '../cooking/wok/defaults.js?v=v0.2.2';
-import { OrderSystem } from '../systems/orders.js?v=v0.2.2';
-import { Scoreboard, starsFor } from '../systems/scoring.js?v=v0.2.2';
-import { LevelTimer } from '../systems/timer.js?v=v0.2.2';
-import { Tutorial, Hints } from '../systems/tutorial.js?v=v0.2.2';
-import { ButtonGroup } from '../ui.js?v=v0.2.2';
-import { drawImg, fillRR, roundRect, text } from '../render/draw.js?v=v0.2.2';
-import { img } from '../assets.js?v=v0.2.2';
-import { audio } from '../audio.js?v=v0.2.2';
-import { load, save, progress } from '../storage.js?v=v0.2.2';
+import { DESIGN_W, DESIGN_H, STORE, COOKING_MODULE } from '../config.js?v=v0.2.3';
+import { L, canonicalId } from '../layout.js?v=v0.2.3';
+import { createCooking } from '../cooking/index.js?v=v0.2.3';
+import { DISH_ART } from '../cooking/wok/defaults.js?v=v0.2.3';
+import { OrderSystem } from '../systems/orders.js?v=v0.2.3';
+import { Scoreboard, starsFor } from '../systems/scoring.js?v=v0.2.3';
+import { LevelTimer } from '../systems/timer.js?v=v0.2.3';
+import { Tutorial, Hints } from '../systems/tutorial.js?v=v0.2.3';
+import { ButtonGroup } from '../ui.js?v=v0.2.3';
+import { drawImg, fillRR, roundRect, text } from '../render/draw.js?v=v0.2.3';
+import { img } from '../assets.js?v=v0.2.3';
+import { audio } from '../audio.js?v=v0.2.3';
+import { load, save, progress } from '../storage.js?v=v0.2.3';
 
 const inR = (r, x, y, pad = 0) => !!r && x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y - pad && y <= r.y + r.h + pad;
 const center = (r) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
@@ -319,9 +319,9 @@ export class LevelScene {
     if (img('ui_results_panel')) { ctx.fillStyle = 'rgb(246,230,200)'; ctx.fillRect(cx - 200, 276, 400, 72); }
     text(ctx, r.cleared ? '通关！' : '挑战失败', cx, 76, { size: 26, bold: true, color: '#fff8ec', stroke: r.cleared ? '#2e7d32' : '#c62828' });
     for (let i = 0; i < 3; i++) drawImg(ctx, i < r.stars && r.t > 0.25 * (i + 1) ? 'ui_star_bright' : 'ui_star_dim', cx - 30 + (i - 1) * 74, 110, 60, 60, { color: i < r.stars ? '#ffc107' : '#bbb' });
-    text(ctx, `得分 ${r.score}`, cx - 150, 236, { size: 16, bold: true, color: '#3e2723' });
-    text(ctx, `完美 ${r.perfect}`, cx, 236, { size: 16, bold: true, color: '#3e2723' });
-    text(ctx, `失误 ${r.mistakes}`, cx + 150, 236, { size: 16, bold: true, color: '#3e2723' });
+    // BUG-011：三个数值格按底图格子居中（底图 960×640 → 480×320，格子 x 110–352 / 370–612 / 630–850，y 350–432），文字限宽不压边框
+    { const x0 = cx - 240, cells = [[110, 352], [370, 612], [630, 850]], labels = [`得分 ${r.score}`, `完美 ${r.perfect}`, `失误 ${r.mistakes}`];
+      this.resultCells = cells.map(([a, b], i) => { const x = x0 + (a + b) / 4, w = (b - a) / 2; text(ctx, labels[i], x, 236, { size: 16, bold: true, color: '#3e2723', maxW: w - 16 }); return { x: x0 + a / 2, w, cx: x, label: labels[i] }; }); }
     text(ctx, `${this.level.name}${r.reason ? ' · ' + r.reason : ''} · 二星 ${this.level.stars.two} / 三星 ${this.level.stars.three}${r.unlockedNext ? ' · 已解锁下一关' : ''}`, cx, 278, { size: 11, color: '#5d4037', maxW: 420 }); // 说明行放在统计框（下沿 y≈269）和按钮之间
     this.overlayUI.draw(ctx);
   }

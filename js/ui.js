@@ -1,6 +1,6 @@
 // Canvas 按钮：命中测试（可外扩热区）+ 按下态 + 单次触发保护
-import { roundRect, text } from './render/draw.js?v=v0.2.2';
-import { audio } from './audio.js?v=v0.2.2';
+import { roundRect, text } from './render/draw.js?v=v0.2.3';
+import { audio } from './audio.js?v=v0.2.3';
 
 export class Button {
   constructor(o) {

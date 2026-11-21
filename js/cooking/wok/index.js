@@ -1,11 +1,11 @@
 // 烹饪模块 wok：rules v0.2.1（拖锅柄控温 / 锅身画圈颠勺 / 往左横拖装盘 / 六步菜谱 / 调料档位 / 客人要求）
 // 只通过 cooking/README.md 里的接口和关卡场景交互，可整体替换。
-import { Wok, qualityOf, stepStatus, orderCorrect, seasonCount, seasonSourceOf } from './model.js?v=v0.2.2';
-import { SOURCES, DISH_ART } from './defaults.js?v=v0.2.2';
-import { drawImg, fillRR, roundRect, text } from '../../render/draw.js?v=v0.2.2';
-import { img } from '../../assets.js?v=v0.2.2';
-import { audio } from '../../audio.js?v=v0.2.2';
-import { L } from '../../layout.js?v=v0.2.2';
+import { Wok, qualityOf, stepStatus, orderCorrect, seasonCount, seasonSourceOf } from './model.js?v=v0.2.3';
+import { SOURCES, DISH_ART } from './defaults.js?v=v0.2.3';
+import { drawImg, fillRR, roundRect, text } from '../../render/draw.js?v=v0.2.3';
+import { img } from '../../assets.js?v=v0.2.3';
+import { audio } from '../../audio.js?v=v0.2.3';
+import { L } from '../../layout.js?v=v0.2.3';
 const TRASH = L.trash;
 const TAP_SLOP = 10;
 export const BURNT_HINT = '糊了！把锅拖进垃圾桶';
@@ -64,9 +64,9 @@ export class WokCooking {
     if (!this.allows([`source:${src.id}`])) return this.note(pot, '无效：教学中只能点高亮处');
     if (src.def.kind !== 'condiment') return;
     if (pot.busy) { audio.play('reject'); this.station.float('锅在冲洗', pot.cx, pot.cy - 40, '#90caf9'); return this.note(pot, '无效：锅在冲洗'); }
-    // 防连点：从上一次“计数成功”的点按算起（rules §9-7）；BUG-006：按毫秒比较并留 1ms 容差（150.0ms 算够）
-    const now = performance.now() / 1000, last = this.tapClock[src.id];
-    if (last != null && (now - last) * 1000 < this.seasoning.tapMinInterval * 1000 - 1) return this.note(pot, `无效：连点过快（<${this.seasoning.tapMinInterval}s）`);
+    // 防连点：从上一次“计数成功”的点按算起（rules §9-7）；BUG-010：按毫秒比较、不留容差，间隔 ≥150ms 才计数（间隔先取整到微秒，只抵消浮点误差，150.0 算够、149.9 不算）
+    const now = performance.now(), last = this.tapClock[src.id], minMs = Math.round(this.seasoning.tapMinInterval * 1000);
+    if (last != null && Math.round((now - last) * 1000) < minMs * 1000) return this.note(pot, `无效：连点过快（<${this.seasoning.tapMinInterval}s）`);
     const before = this.snapshotSteps(pot);
     const r = pot.addSource(src.id);
     if (!r.counted) { audio.play('reject'); this.station.float(`${src.def.name}最多 ${this.seasoning.maxTaps} 下`, pot.cx, pot.cy - 40, '#ffcc80'); return this.note(pot, '无效：调料已到上限'); }
@@ -110,6 +110,8 @@ export class WokCooking {
     this.note(pot, `装盘 → plate-${plate.index + 1}`);
     this.emit('plate', { plate: plate.index + 1, pot: pot.index + 1, quality: plate.dish.quality });
   }
+  // 锅柄弹回：H 恢复到按下时的值（BUG-008 / BUG-009）
+  restoreH(p) { const pot = p.pot; if (pot.H === p.H0) return; pot.setH(p.H0); this.emit('heat', { value: p.H0, pot: pot.index + 1 }); }
   // 点垃圾桶（v0.2.2）：只有一口锅里有东西 → 直接倒掉那口锅；两口都有 → 进入「再点要倒的锅」（2 s 窗口）
   tapTrash() {
     if (!this.allows(['trash'])) return this.note(null, '无效：教学中只能点高亮处');
@@ -119,7 +121,7 @@ export class WokCooking {
     this.trashArmed = this.tuning.trashWindow; audio.play('click'); this.note(null, '垃圾桶：2 秒内点要倒的锅');
   }
   dumpPot(pot, how = '倒掉') {
-    if (!this.allows(['trash', `pot:${pot.index + 1}`])) return this.note(pot, '无效：教学中只能操作高亮处');
+    if (!this.allows(['trash'])) { this.trashArmed = 0; return this.note(pot, '无效：教学这一步不能倒掉（锅柄弹回）'); } // BUG-008：教学里只有高亮了垃圾桶的「糊了 → 倒掉」分支能倒锅
     this.trashArmed = 0;
     if (!pot.dish || pot.busy) return this.note(pot, '无效：锅是空的');
     pot.startWash(); audio.play('reject'); this.note(pot, how); this.emit('trash', { pot: pot.index + 1 }); // 和装盘一样自动冲洗
@@ -177,7 +179,8 @@ export class WokCooking {
         if (p.mode === 'heat' && !this.allows([`potHandle:${p.pot.index + 1}`, `potHeat:${p.pot.index + 1}`])) { p.mode = 'blocked'; this.note(p.pot, '无效：教学中只能操作高亮处'); }
         else this.note(p.pot, p.mode === 'plate' ? `装盘（拖动中，pan${p.pot.index + 1}-handle → plate-zone）` : `调火（pan${p.pot.index + 1}-track-hit）`);
       }
-      if (p.mode === 'heat') this.setHFromY(p.pot, ev.y);
+      if (p.overTrash) { p.visitedTrash = true; if (p.mode === 'heat' && p.pot.H !== p.H0) p.pot.setH(p.H0); } // BUG-009：手指在桶上时不再跟手调火，火力先回到按下时的值
+      else if (p.mode === 'heat') this.setHFromY(p.pot, ev.y);
     } else if (p.kind === 'body') {
       const pot = p.pot, r = Math.hypot(ev.x - pot.cx, ev.y - pot.cy);
       if (r > pot.r) { p.net = 0; p.lastA = null; return true; } // 离锅心超过 85px：离开判定区，净角度清零
@@ -225,11 +228,13 @@ export class WokCooking {
         const pot = p.pot;
         // 拖锅柄进垃圾桶（v0.2.2）：松手点落在桶里就算倒掉，优先于调火 / 装盘；拖动中按调火改过的 H 恢复到按下时的值
         if (p.moved >= TAP_SLOP && inR(TRASH, ev.x, ev.y, this.G.trashDropPad ?? 10)) {
-          if (pot.H !== p.H0) { const was = pot.H; pot.setH(p.H0); if (was !== p.H0) this.emit('heat', { value: p.H0, pot: pot.index + 1 }); }
+          this.restoreH(p);
           if (!pot.dish || pot.busy) { this.note(pot, '无效：空锅拖进垃圾桶（不处理）'); break; }
           this.dumpPot(pot, `拖进垃圾桶倒掉（pan${pot.index + 1}-handle → trash）`);
           break;
         }
+        // BUG-009：拖到过桶上、又移出来在桶外松手 → 当作改主意，锅柄弹回、火力不变
+        if (p.visitedTrash && p.mode !== 'plate') { this.restoreH(p); this.note(pot, '无效：移出垃圾桶松手，锅柄弹回'); break; }
         if (!p.mode) { // 点按锅柄：关火位时开火到 H=0.5
           if (!this.allows([`potHandle:${pot.index + 1}`, `potHeat:${pot.index + 1}`])) { this.note(pot, '无效：教学中只能操作高亮处'); break; }
           if (pot.H === 0) { pot.setH(this.G.tapOnH); audio.play('ignite'); this.note(pot, '调火（点按开火）'); this.emit('fireOn', { pot: pot.index + 1 }); this.emit('heat', { value: pot.H, pot: pot.index + 1 }); }
@@ -297,7 +302,7 @@ export class WokCooking {
   render(ctx) {
     for (const s of this.sources) this.drawSource(ctx, s);
     const tr = TRASH; drawImg(ctx, 'trash_bin', tr.x - 4, tr.y, tr.w + 8, tr.h, { color: '#555', label: '倒掉' });
-    if (this.press?.overTrash) { ctx.fillStyle = 'rgba(255,82,82,0.28)'; roundRect(ctx, tr.x - 6, tr.y - 6, tr.w + 12, tr.h + 12, 12); ctx.fill(); ctx.strokeStyle = '#ff5252'; ctx.lineWidth = 4; roundRect(ctx, tr.x - 6, tr.y - 6, tr.w + 12, tr.h + 12, 12); ctx.stroke(); text(ctx, this.press.kind === 'handle' && !(this.press.pot.dish && !this.press.pot.busy) ? '锅是空的' : '松手倒掉', tr.x + tr.w / 2, tr.y - 14, { size: 13, bold: true, color: '#ff8a80', stroke: '#000' }); }
+    if (this.press?.overTrash) { ctx.fillStyle = 'rgba(255,82,82,0.28)'; roundRect(ctx, tr.x - 6, tr.y - 6, tr.w + 12, tr.h + 12, 12); ctx.fill(); ctx.strokeStyle = '#ff5252'; ctx.lineWidth = 4; roundRect(ctx, tr.x - 6, tr.y - 6, tr.w + 12, tr.h + 12, 12); ctx.stroke(); }  // 「松手倒掉」文字画在顶层（renderOverlay，BUG-012）
     else if (this.trashArmed > 0) { ctx.strokeStyle = '#ff5252'; ctx.lineWidth = 3; roundRect(ctx, tr.x - 3, tr.y - 3, tr.w + 6, tr.h + 6, 10); ctx.stroke(); text(ctx, '点锅倒掉', tr.x + tr.w / 2, tr.y - 10, { size: 12, bold: true, color: '#ff8a80', stroke: '#000' }); }
     { const z = L.plateZone, pl = this.press?.kind === 'handle' && this.press.mode === 'plate'; ctx.fillStyle = pl ? 'rgba(123,224,127,0.25)' : 'rgba(255,255,255,0.10)'; roundRect(ctx, z.x - 2, z.y - 2, z.w + 4, z.h + 4, 12); ctx.fill(); }
     for (const p of this.plates) if (!(this.press?.kind === 'plate' && this.press.plate === p && this.press.moved >= TAP_SLOP)) this.drawPlate(ctx, p.rect, p.dish);
@@ -421,6 +426,17 @@ export class WokCooking {
     const x = p.x, y = p.y - 48;
     if (p.kind === 'ingredient') drawImg(ctx, p.src.def.art, x - 30, y - 30, 60, 60, { color: p.src.def.color, label: p.src.def.glyph });
     if (p.kind === 'plate') this.drawPlate(ctx, { x: x - 40, y: y - 34, w: 80, h: 68 }, p.plate.dish);
+    if (p.overTrash) { // BUG-012：手指在桶上 → 只显示「松手倒掉」（顶层、带底），收起装盘引导
+      if (p.kind === 'plate') this.drawPlate(ctx, { x: x - 40, y: y - 34, w: 80, h: 68 }, p.plate.dish);
+      if (p.kind === 'handle' && p.pot.dish?.mainIn) { const art = DISH_ART[p.pot.dish.recipe.id]; ctx.globalAlpha = 0.5; drawImg(ctx, art.dish, p.x - 30, p.y - 78, 60, 60, { color: art.color }); ctx.globalAlpha = 1; }
+      const empty = p.kind === 'handle' && !(p.pot.dish && !p.pot.busy), blocked = !this.allows(['trash']);
+      const msg = empty ? '锅是空的' : blocked ? '这一步不能倒掉' : '松手倒掉';
+      const tr = TRASH, bx = tr.x + tr.w / 2, by = tr.y - 52;
+      fillRR(ctx, bx - 58, by - 15, 116, 30, 15, 'rgba(40,10,10,.88)'); ctx.strokeStyle = '#ff5252'; ctx.lineWidth = 2; roundRect(ctx, bx - 58, by - 15, 116, 30, 15); ctx.stroke();
+      text(ctx, msg, bx, by + 1, { size: 15, bold: true, color: empty || blocked ? '#ffcc80' : '#ff8a80' });
+      this.overTrashMsg = msg;
+      return;
+    }
     if (p.kind === 'handle' && p.mode === 'plate') {
       const dist = p.x - p.x0, ok = dist >= this.G.plateDragPx && inR(L.plateZone, p.x, p.y);
       if (p.pot.dish?.mainIn) { const art = DISH_ART[p.pot.dish.recipe.id]; ctx.globalAlpha = 0.85; drawImg(ctx, art.dish, p.x - 30, p.y - 78, 60, 60, { color: art.color }); ctx.globalAlpha = 1; }
@@ -442,7 +458,7 @@ export class WokCooking {
   }
   snapshot() {
     return {
-      activePot: this.activePot, lastToss: this.lastToss || null, trashArmed: +this.trashArmed.toFixed(2), overTrash: !!this.press?.overTrash, lastGesture: this.lastGesture || null,
+      activePot: this.activePot, lastToss: this.lastToss || null, trashArmed: +this.trashArmed.toFixed(2), overTrash: !!this.press?.overTrash, overTrashMsg: this.press?.overTrash ? this.overTrashMsg || null : null, platingGuide: !!(this.press?.kind === 'handle' && this.press.mode === 'plate' && !this.press.overTrash && this.press.moved >= TAP_SLOP), lastGesture: this.lastGesture || null,
       pots: this.pots.map((p) => ({ H: +p.H.toFixed(3), T: +p.T.toFixed(3), band: p.band, busy: p.busy, cap: p.tempCap, cookFrozen: !!p.cookFrozen,
         recipe: p.dish?.recipe?.id || null, c: p.dish ? +p.dish.c.toFixed(3) : null, b: p.dish ? +p.dish.b.toFixed(3) : null,
         mainIn: !!p.dish?.mainIn, noOil: !!p.dish?.noOil, tosses: p.dish?.tosses || 0, tossAfterSeason: p.dish?.tossAfterSeason || 0,

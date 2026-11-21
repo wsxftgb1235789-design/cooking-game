@@ -356,7 +356,7 @@
               "event": "plate"
             },
             "onBurnt": {
-              "text": "糊了！点垃圾桶倒掉重来",
+              "text": "糊了！把锅拖进垃圾桶",
               "highlight": [
                 "trash",
                 "pot:1"

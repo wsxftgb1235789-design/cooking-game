@@ -1,4 +1,4 @@
-# 做饭闯关 · H5 原型（v0.2.2）
+# 做饭闯关 · H5 原型（v0.2.3）
 
 横屏手机网页游戏，纯 HTML5 Canvas + 原生 ES 模块，无构建步骤。规则：`docs/rules.md` v0.2.2；关卡格式：`levels/FORMAT.md`（formatVersion 2）；布局：`ui/layout.md` v0.2「最终坐标」（915×412），元素 id = `ui/ui-spec.md` 稳定 id。
 

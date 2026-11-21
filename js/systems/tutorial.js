@@ -1,4 +1,4 @@
-import { canonicalId } from '../layout.js?v=v0.2.2';
+import { canonicalId } from '../layout.js?v=v0.2.3';
 // 新手教学（强引导，一步一卡）+ 轻提示。数据来自 levels.json 的 tutorial.steps / hints（FORMAT.md §3.6）
 // waitFor / showAt / trigger 匹配。字段见 FORMAT.md §5：gte(数值≥) value(tempGte 阈值) count(次数≥) band stepType source orderIndex recipe after(本步开始后先发生过的事件)
 export function matches(w, name, data = {}, seen = null) {

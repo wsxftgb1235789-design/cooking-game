@@ -1,7 +1,7 @@
 // 音效：WebAudio。首次触摸时解锁 AudioContext；有文件用文件，没有则合成占位。
 // 接口：audio.play(name) / audio.setLoop(name, on) / audio.setEnabled(bool)。
-import { SOUNDS, STORE, withV } from './config.js?v=v0.2.2';
-import { load, save } from './storage.js?v=v0.2.2';
+import { SOUNDS, STORE, withV } from './config.js?v=v0.2.3';
+import { load, save } from './storage.js?v=v0.2.3';
 
 class AudioManager {
   constructor() {

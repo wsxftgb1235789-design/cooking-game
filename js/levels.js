@@ -1,6 +1,6 @@
 // 关卡配置：加载 + 按 levels/FORMAT.md（formatVersion 2）校验 + 规范化（缺省字段补代码默认值）。
 // 出错返回 errors 列表，由错误界面逐条显示。
-import { DEFAULT_TEMP, DEFAULT_RATES, DEFAULT_JUDGE, DEFAULT_SEASONING, DEFAULT_TUNING, DEFAULT_KITCHEN, DEFAULT_TUTORIAL_TEMP_CAP, SOURCES } from './cooking/wok/defaults.js?v=v0.2.2';
+import { DEFAULT_TEMP, DEFAULT_RATES, DEFAULT_JUDGE, DEFAULT_SEASONING, DEFAULT_TUNING, DEFAULT_KITCHEN, DEFAULT_TUTORIAL_TEMP_CAP, SOURCES } from './cooking/wok/defaults.js?v=v0.2.3';
 
 const DEF_SCORING = { orderComplete: 100, perfectBonus: 50, orderBonus: 20, timeBonusPerSecond: 2, wrongSeasoningMultiplier: 0.5, rawReturnPenalty: 0, burntPenalty: -30, timeoutPenalty: -50, wrongDishPenalty: 0 };
 const DEF_MISTAKES = { max: 3, countRaw: true, countBurnt: true, countTimeout: true };

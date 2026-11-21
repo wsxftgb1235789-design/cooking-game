@@ -1,13 +1,13 @@
 // 入口：预加载 → 读关卡配置 → 选关；主循环用累计 dt（单帧上限），切后台/竖屏自动暂停
-import { VERSION, LEVELS_URL, MAX_FRAME_DT, IMAGES, withV } from './config.js?v=v0.2.2';
-import { Viewport } from './viewport.js?v=v0.2.2';
-import { Input } from './input.js?v=v0.2.2';
-import { setupFullscreenButton } from './fullscreen.js?v=v0.2.2';
-import { loadImages, missing } from './assets.js?v=v0.2.2';
-import { audio } from './audio.js?v=v0.2.2';
-import { loadLevels } from './levels.js?v=v0.2.2';
-import { LoadingScene, ErrorScene, SelectScene } from './scenes/menus.js?v=v0.2.2';
-import { LevelScene } from './scenes/level.js?v=v0.2.2';
+import { VERSION, LEVELS_URL, MAX_FRAME_DT, IMAGES, withV } from './config.js?v=v0.2.3';
+import { Viewport } from './viewport.js?v=v0.2.3';
+import { Input } from './input.js?v=v0.2.3';
+import { setupFullscreenButton } from './fullscreen.js?v=v0.2.3';
+import { loadImages, missing } from './assets.js?v=v0.2.3';
+import { audio } from './audio.js?v=v0.2.3';
+import { loadLevels } from './levels.js?v=v0.2.3';
+import { LoadingScene, ErrorScene, SelectScene } from './scenes/menus.js?v=v0.2.3';
+import { LevelScene } from './scenes/level.js?v=v0.2.3';
 
 const params = new URLSearchParams(location.search);
 const DEBUG_SPEED = Math.max(0.1, Math.min(20, parseFloat(params.get('debugSpeed')) || 1)); // 仅测试用
