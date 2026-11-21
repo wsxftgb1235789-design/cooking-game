@@ -1,0 +1,9 @@
+{
+  "name": "做饭闯关",
+  "short_name": "做饭闯关",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#1e1b18",
+  "theme_color": "#1e1b18"
+}

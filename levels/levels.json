@@ -1,0 +1,639 @@
+{
+  "formatVersion": 2,
+  "_status": "草案：按 rules v0.2 写，字段超出 FORMAT v1 的部分见 levels-notes.md「FORMAT 缺字段」，等主程出 FORMAT v2 后再对齐键名",
+  "seasoning": {
+    "levels": {
+      "0": "无味",
+      "1": "清淡",
+      "2": "适中",
+      "3": "重口"
+    },
+    "maxTaps": 3,
+    "tapMinInterval": 0.15,
+    "default": 2,
+    "requests": {
+      "less_salt": {
+        "label": "少盐",
+        "level": 1
+      },
+      "more_salt": {
+        "label": "多盐",
+        "level": 3
+      }
+    }
+  },
+  "recipes": {
+    "egg_fried_rice": {
+      "name": "蛋炒饭",
+      "steps": [
+        {
+          "type": "oil",
+          "source": "oil",
+          "taps": 1
+        },
+        {
+          "type": "ingredient",
+          "source": "egg"
+        },
+        {
+          "type": "ingredient",
+          "source": "rice",
+          "main": true
+        },
+        {
+          "type": "seasoning",
+          "source": "salt"
+        },
+        {
+          "type": "toss",
+          "count": 2
+        },
+        {
+          "type": "garnish",
+          "source": "scallion",
+          "taps": 1
+        }
+      ],
+      "temp": {
+        "start": 20,
+        "min": 20,
+        "max": 100,
+        "riseBase": 2,
+        "risePerH": 14,
+        "cool": 8,
+        "tossCool": 10,
+        "foodDrop": 15,
+        "blueBelow": 40,
+        "redAbove": 75
+      },
+      "rates": {
+        "C": {
+          "blue": 4,
+          "yellow": 12,
+          "red": 12
+        },
+        "B": {
+          "blue": 0,
+          "yellow": 0,
+          "yellowOvercooked": 8,
+          "red": 30
+        },
+        "noOilRed": 10
+      },
+      "judge": {
+        "doneC": 60,
+        "perfectC": 80,
+        "perfectBMax": 15,
+        "burntB": 50,
+        "smokeB": 20,
+        "blackSmokeB": 50
+      },
+      "patience": 30,
+      "refTime": 13
+    },
+    "spicy_clams": {
+      "name": "辣炒花甲",
+      "steps": [
+        {
+          "type": "oil",
+          "source": "oil",
+          "taps": 1
+        },
+        {
+          "type": "ingredient",
+          "source": "chili_garlic",
+          "requireTempMin": 40
+        },
+        {
+          "type": "ingredient",
+          "source": "clams",
+          "main": true
+        },
+        {
+          "type": "seasoning",
+          "source": "sauce"
+        },
+        {
+          "type": "toss",
+          "count": 2
+        },
+        {
+          "type": "garnish",
+          "source": "scallion",
+          "taps": 1
+        }
+      ],
+      "temp": {
+        "start": 20,
+        "min": 20,
+        "max": 100,
+        "riseBase": 2,
+        "risePerH": 14,
+        "cool": 8,
+        "tossCool": 10,
+        "foodDrop": 15,
+        "blueBelow": 40,
+        "redAbove": 75
+      },
+      "rates": {
+        "C": {
+          "blue": 4,
+          "yellow": 12,
+          "red": 12
+        },
+        "B": {
+          "blue": 0,
+          "yellow": 0,
+          "yellowOvercooked": 8,
+          "red": 30
+        },
+        "noOilRed": 10
+      },
+      "judge": {
+        "doneC": 60,
+        "perfectC": 80,
+        "perfectBMax": 15,
+        "burntB": 50,
+        "smokeB": 20,
+        "blackSmokeB": 50
+      },
+      "patience": 30,
+      "refTime": 14
+    }
+  },
+  "levels": [
+    {
+      "id": "L1",
+      "name": "第1关 学会控火",
+      "description": "只有蛋炒饭，学会看温度、颠勺降温",
+      "timeLimit": 0,
+      "recipes": [
+        "egg_fried_rice"
+      ],
+      "kitchen": {
+        "pots": 1,
+        "plates": 1,
+        "washTime": 1
+      },
+      "maxConcurrentOrders": 1,
+      "spawn": {
+        "mode": "afterResolve",
+        "firstDelay": 0,
+        "interval": 2
+      },
+      "patience": {
+        "egg_fried_rice": 40
+      },
+      "refTime": {
+        "egg_fried_rice": 13
+      },
+      "requestRate": 0,
+      "orders": [
+        {
+          "recipe": "egg_fried_rice",
+          "tutorial": true
+        },
+        {
+          "recipe": "egg_fried_rice"
+        },
+        {
+          "recipe": "egg_fried_rice"
+        },
+        {
+          "recipe": "egg_fried_rice"
+        }
+      ],
+      "scoring": {
+        "orderComplete": 100,
+        "perfectBonus": 50,
+        "orderBonus": 20,
+        "timeBonusPerSecond": 2,
+        "wrongSeasoningMultiplier": 0.5,
+        "rawReturnPenalty": 0,
+        "burntPenalty": -30,
+        "timeoutPenalty": -50,
+        "wrongDishPenalty": 0
+      },
+      "mistakes": {
+        "max": 3,
+        "countRaw": true,
+        "countBurnt": true,
+        "countTimeout": true
+      },
+      "tutorial": {
+        "skipIfDone": true,
+        "tempCap": 75,
+        "steps": [
+          {
+            "id": "t1",
+            "text": "来客人了，要一份蛋炒饭！",
+            "highlight": [
+              "orderCard"
+            ],
+            "waitFor": {
+              "event": "tapAnywhere"
+            }
+          },
+          {
+            "id": "t2",
+            "text": "点锅柄开火",
+            "highlight": [
+              "potHandle:1"
+            ],
+            "waitFor": {
+              "event": "fireOn"
+            }
+          },
+          {
+            "id": "t3",
+            "text": "点一下倒油",
+            "highlight": [
+              "source:oil"
+            ],
+            "waitFor": {
+              "event": "step",
+              "stepType": "oil"
+            }
+          },
+          {
+            "id": "t4a",
+            "text": "把鸡蛋拖进锅",
+            "highlight": [
+              "source:egg",
+              "pot:1"
+            ],
+            "waitFor": {
+              "event": "ingredientIn",
+              "source": "egg"
+            }
+          },
+          {
+            "id": "t4b",
+            "text": "把米饭拖进锅",
+            "highlight": [
+              "source:rice",
+              "pot:1"
+            ],
+            "waitFor": {
+              "event": "ingredientIn",
+              "source": "rice"
+            }
+          },
+          {
+            "id": "t5",
+            "text": "黄色最好炒，往下拖锅柄能调小火",
+            "highlight": [
+              "thermometer:1",
+              "potHandle:1"
+            ],
+            "waitFor": {
+              "event": "tempBand",
+              "band": "yellow"
+            },
+            "releaseTempCap": true
+          },
+          {
+            "id": "t6",
+            "text": "温度快进红色了！在锅上画圈颠勺降温",
+            "highlight": [
+              "pot:1"
+            ],
+            "showAt": {
+              "event": "tempGte",
+              "value": 70
+            },
+            "waitFor": {
+              "event": "tempBand",
+              "band": "yellow",
+              "after": "toss"
+            }
+          },
+          {
+            "id": "t7a",
+            "text": "点 2 下加盐",
+            "highlight": [
+              "source:salt"
+            ],
+            "waitFor": {
+              "event": "seasoningCount",
+              "gte": 2
+            }
+          },
+          {
+            "id": "t7b",
+            "text": "再颠勺 2 下拌匀",
+            "highlight": [
+              "pot:1"
+            ],
+            "waitFor": {
+              "event": "toss",
+              "count": 2
+            }
+          },
+          {
+            "id": "t8a",
+            "text": "撒点葱花",
+            "highlight": [
+              "source:scallion"
+            ],
+            "waitFor": {
+              "event": "step",
+              "stepType": "garnish"
+            }
+          },
+          {
+            "id": "t8b",
+            "text": "熟了！按住锅柄往右拖到盘子上",
+            "highlight": [
+              "potHandle:1",
+              "plateArea"
+            ],
+            "showAt": {
+              "event": "doneness",
+              "gte": 80
+            },
+            "waitFor": {
+              "event": "plate"
+            },
+            "onBurnt": {
+              "text": "糊了！点垃圾桶倒掉重来",
+              "highlight": [
+                "trash",
+                "pot:1"
+              ],
+              "waitFor": {
+                "event": "trash"
+              },
+              "gotoStep": "t3"
+            }
+          },
+          {
+            "id": "t9",
+            "text": "把盘子拖给客人",
+            "highlight": [
+              "orderCard"
+            ],
+            "waitFor": {
+              "event": "serve"
+            }
+          },
+          {
+            "id": "t10",
+            "text": "后面的客人会等不及，动作要快！",
+            "highlight": [],
+            "waitFor": {
+              "event": "tapAnywhere"
+            }
+          }
+        ],
+        "hints": [
+          {
+            "trigger": {
+              "event": "orderSpawn",
+              "orderIndex": 2
+            },
+            "text": "温度进红段就颠勺，别让它冒烟",
+            "duration": 3,
+            "pause": false,
+            "once": true
+          }
+        ]
+      },
+      "stars": {
+        "maxScore": 672,
+        "two": 403,
+        "three": 538
+      }
+    },
+    {
+      "id": "L2",
+      "name": "第2关 第二道菜",
+      "description": "加入辣炒花甲，客人开始提要求",
+      "timeLimit": 0,
+      "recipes": [
+        "egg_fried_rice",
+        "spicy_clams"
+      ],
+      "kitchen": {
+        "pots": 1,
+        "plates": 2,
+        "washTime": 1
+      },
+      "maxConcurrentOrders": 1,
+      "spawn": {
+        "mode": "afterResolve",
+        "firstDelay": 2,
+        "interval": 2
+      },
+      "patience": {
+        "egg_fried_rice": 32,
+        "spicy_clams": 35
+      },
+      "refTime": {
+        "egg_fried_rice": 13,
+        "spicy_clams": 14
+      },
+      "requestRate": 0.3,
+      "orders": [
+        {
+          "recipe": "egg_fried_rice"
+        },
+        {
+          "recipe": "spicy_clams"
+        },
+        {
+          "recipe": "spicy_clams"
+        },
+        {
+          "recipe": "egg_fried_rice",
+          "request": "less_salt"
+        },
+        {
+          "recipe": "spicy_clams",
+          "request": "more_salt"
+        },
+        {
+          "recipe": "egg_fried_rice"
+        }
+      ],
+      "scoring": {
+        "orderComplete": 100,
+        "perfectBonus": 50,
+        "orderBonus": 20,
+        "timeBonusPerSecond": 2,
+        "wrongSeasoningMultiplier": 0.5,
+        "rawReturnPenalty": 0,
+        "burntPenalty": -30,
+        "timeoutPenalty": -50,
+        "wrongDishPenalty": 0
+      },
+      "mistakes": {
+        "max": 3,
+        "countRaw": true,
+        "countBurnt": true,
+        "countTimeout": true
+      },
+      "tutorial": {
+        "steps": [],
+        "hints": [
+          {
+            "trigger": {
+              "event": "orderSpawn",
+              "orderIndex": 1
+            },
+            "text": "花甲要等锅热了再下辣椒蒜爆香",
+            "duration": 3,
+            "pause": false,
+            "once": true
+          },
+          {
+            "trigger": {
+              "event": "orderSpawn",
+              "orderIndex": 3
+            },
+            "text": "看气泡：少盐点 1 下，多盐点 3 下",
+            "duration": 3,
+            "pause": false,
+            "once": true
+          },
+          {
+            "trigger": {
+              "event": "orderBonus"
+            },
+            "text": "照菜谱条顺序做完，额外加 20 分",
+            "duration": 3,
+            "pause": false,
+            "once": true
+          }
+        ]
+      },
+      "stars": {
+        "maxScore": 1260,
+        "two": 756,
+        "three": 1008
+      }
+    },
+    {
+      "id": "L3",
+      "name": "第3关 忙起来了",
+      "description": "两口锅同时炒，最多 3 单一起来",
+      "timeLimit": 0,
+      "recipes": [
+        "egg_fried_rice",
+        "spicy_clams"
+      ],
+      "kitchen": {
+        "pots": 2,
+        "plates": 3,
+        "washTime": 1
+      },
+      "maxConcurrentOrders": 3,
+      "spawn": {
+        "mode": "schedule",
+        "overflow": "defer"
+      },
+      "patience": {
+        "egg_fried_rice": 40,
+        "spicy_clams": 42
+      },
+      "refTime": {
+        "egg_fried_rice": 17,
+        "spicy_clams": 18
+      },
+      "requestRate": 0.3,
+      "orders": [
+        {
+          "recipe": "egg_fried_rice",
+          "at": 0
+        },
+        {
+          "recipe": "spicy_clams",
+          "at": 4
+        },
+        {
+          "recipe": "egg_fried_rice",
+          "at": 18,
+          "request": "more_salt"
+        },
+        {
+          "recipe": "spicy_clams",
+          "at": 28
+        },
+        {
+          "recipe": "spicy_clams",
+          "at": 38,
+          "request": "less_salt"
+        },
+        {
+          "recipe": "egg_fried_rice",
+          "at": 48
+        },
+        {
+          "recipe": "spicy_clams",
+          "at": 57
+        },
+        {
+          "recipe": "egg_fried_rice",
+          "at": 66,
+          "request": "less_salt"
+        }
+      ],
+      "scoring": {
+        "orderComplete": 100,
+        "perfectBonus": 50,
+        "orderBonus": 20,
+        "timeBonusPerSecond": 2,
+        "wrongSeasoningMultiplier": 0.5,
+        "rawReturnPenalty": 0,
+        "burntPenalty": -30,
+        "timeoutPenalty": -50,
+        "wrongDishPenalty": 0
+      },
+      "mistakes": {
+        "max": 3,
+        "countRaw": true,
+        "countBurnt": true,
+        "countTimeout": true
+      },
+      "tutorial": {
+        "steps": [],
+        "hints": [
+          {
+            "trigger": {
+              "event": "levelStart"
+            },
+            "text": "两口锅一起炒，没人管的锅也在升温",
+            "duration": 3,
+            "pause": false,
+            "once": true
+          },
+          {
+            "trigger": {
+              "event": "orderSpawn",
+              "orderIndex": 1
+            },
+            "text": "第二单用另一口锅，两边温度都要盯",
+            "duration": 3,
+            "pause": false,
+            "once": true
+          },
+          {
+            "trigger": {
+              "event": "orderSpawn",
+              "orderIndex": 2
+            },
+            "text": "炒好先装盘放着，腾出锅接下一单",
+            "duration": 3,
+            "pause": false,
+            "once": true
+          }
+        ]
+      },
+      "stars": {
+        "maxScore": 1736,
+        "two": 1042,
+        "three": 1389
+      }
+    }
+  ]
+}
